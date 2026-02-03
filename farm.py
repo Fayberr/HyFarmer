@@ -11,12 +11,12 @@ SET_ORI_KEY = 260
 END_KEY = 269
 
 ROW_MIN = -238.68
-ROW_MAX = 238.68
+ROW_MAX =  238.68
 PUSH_MIN = 0.25
 PUSH_MAX = 2.5
 
 # ================= STATE =================
-paused = True  # startet bewusst pausiert
+paused = True                 # startet bewusst pausiert
 running = True
 _last_key_seen = None
 
@@ -28,11 +28,9 @@ start_row_x = None
 with open(LOG_PATH, "w", encoding="utf-8") as f:
     f.write("=== FARM BASE LOG START ===\n")
 
-
 def log(msg: str):
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(f"[{time.strftime('%H:%M:%S')}] {msg}\n")
-
 
 def log_state(tag: str):
     try:
@@ -47,28 +45,25 @@ def log_state(tag: str):
     except Exception as e:
         log(f"STATE ERROR: {e}")
 
-
 # ================= INPUT =================
 def stop_inputs():
     for fn in (
-            m.player_press_attack,
-            m.player_press_forward,
-            m.player_press_backward,
-            m.player_press_left,
-            m.player_press_right,
+        m.player_press_attack,
+        m.player_press_forward,
+        m.player_press_backward,
+        m.player_press_left,
+        m.player_press_right,
     ):
         try:
             fn(False)
         except Exception as e:
             log(f"stop_inputs error: {e}")
 
-
 def set_move(attack=False, forward=False, left=False, right=False):
     m.player_press_attack(attack)
     m.player_press_forward(forward)
     m.player_press_left(left)
     m.player_press_right(right)
-
 
 # ================= DIRECTION =================
 def get_direction(x: float):
@@ -81,7 +76,6 @@ def get_direction(x: float):
         f"row_index={row_index} -> {direction}"
     )
     return direction, snapped_x
-
 
 # ================= ACTIONS =================
 def toggle_pause():
@@ -96,12 +90,11 @@ def toggle_pause():
     else:
         paused = True
         log("[PAUSE] PAUSED")
-        stop_inputs()  # <---- DAS FEHLT DIR AKTUELL
+        stop_inputs()   # <---- DAS FEHLT DIR AKTUELL
         try:
             m.echo("[HyFarmer] Pausiert")
         except Exception:
             pass
-
 
 def do_warp():
     log("[WARP] /warp garden")
@@ -110,7 +103,6 @@ def do_warp():
     except Exception:
         pass
     m.execute("/warp garden")
-
 
 def set_orientation():
     TARGET_YAW = -90.0
@@ -121,7 +113,6 @@ def set_orientation():
     except Exception:
         pass
     m.player_set_orientation(TARGET_YAW, TARGET_PITCH)
-
 
 def kill_all_jobs():
     log("=== KILL_ALL START ===")
@@ -135,7 +126,7 @@ def kill_all_jobs():
     while True:
         try:
             others = [j for j in m.job_info()
-                      if j.status == "RUNNING" and not j.self]
+                       if j.status == "RUNNING" and not j.self]
         except Exception:
             others = []
 
@@ -161,7 +152,6 @@ def kill_all_jobs():
 
     log("=== KILL_ALL DONE ===")
 
-
 # ================= KEY LISTENER =================
 def on_key(event):
     global _last_key_seen
@@ -170,7 +160,6 @@ def on_key(event):
     k = event["key"]
     log(f"[KEY] {k}")
     _last_key_seen = k
-
 
 m._register_key_listener(on_key)
 
@@ -230,8 +219,8 @@ while running:
             m.player_press_attack(True)
 
             at_wall = (
-                    (direction == "left" and z <= ROW_MIN) or
-                    (direction == "right" and z >= ROW_MAX)
+                (direction == "left" and z <= ROW_MIN) or
+                (direction == "right" and z >= ROW_MAX)
             )
 
             if at_wall and row_push_until == 0.0:
