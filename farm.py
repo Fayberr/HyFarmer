@@ -15,6 +15,11 @@ ROW_MAX =  238.68
 PUSH_MIN = 0.25
 PUSH_MAX = 2.5
 
+END_ROW_X = -55.3
+END_ROW_Z = 238.68
+END_TOL = 0.1        # Toleranz, weil Koordinaten nie perfekt sind
+WARP_WAIT = 1.2
+
 # ================= STATE =================
 paused = True
 running = True
@@ -76,6 +81,9 @@ def get_direction(x: float):
         f"row_index={row_index} -> {direction}"
     )
     return direction, snapped_x
+
+def at_field_end(x, z) -> bool:
+    return abs(x - END_ROW_X) < END_TOL and abs(z - END_ROW_Z) < END_TOL
 
 # ================= ACTIONS =================
 def is_valid_row_x(x: float) -> bool:
@@ -295,6 +303,35 @@ while running:
         elif STATE == "MOVE_FORWARD":
 
             target_row_x = start_row_x + 3
+
+            # ===== FELD-ENDE HANDLER =====
+            if at_field_end(x, z):
+                log("[END] reached final row -> warping")
+                stop_inputs()
+
+                try:
+                    m.echo("[HyFarmer] End of field reached, warping...")
+                except Exception:
+                    pass
+
+                m.execute("/warp garden")
+                time.sleep(WARP_WAIT)
+
+                # nach Warp neu orientieren und neu evaluieren
+                x, y, z = m.player_position()
+                direction, snapped_x = get_direction(x)
+
+                start_row_x = snapped_x
+                STATE = "FARM_ROW"
+                row_push_until = 0.0
+
+                try:
+                    m.echo("[HyFarmer] Resuming farming after warp")
+                except Exception:
+                    pass
+
+                continue
+
             next_direction, target_snap = get_direction(target_row_x)
 
             log(
