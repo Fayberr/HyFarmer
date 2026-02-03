@@ -78,23 +78,59 @@ def get_direction(x: float):
     return direction, snapped_x
 
 # ================= ACTIONS =================
+def is_valid_row_x(x: float) -> bool:
+    row_index = round((x + 88.3) / 3)
+    snapped_x = -88.3 + row_index * 3
+    return abs(x - snapped_x) < 0.05   # 5 cm Toleranz gegen Float-Noise
+
 def toggle_pause():
     global paused
-    if paused:
-        paused = False
-        log("[PAUSE] RESUME")
-        try:
-            m.echo("[HyFarmer] Fortgesetzt")
-        except Exception:
-            pass
-    else:
+
+    # FALL 1: wir WOLLEN pausieren
+    if not paused:
         paused = True
+        stop_inputs()
         log("[PAUSE] PAUSED")
-        stop_inputs()   # <---- DAS FEHLT DIR AKTUELL
         try:
-            m.echo("[HyFarmer] Pausiert")
+            m.echo("[HyFarmer] Paused")
         except Exception:
             pass
+        return
+
+    # ===== FALL 2: wir WOLLEN entpausieren -> erst CHECKS =====
+
+    try:
+        x, y, z = m.player_position()
+        yaw, pitch = m.player_orientation()
+    except Exception as e:
+        log(f"[PAUSE] ERROR reading state: {e}")
+        return
+
+    # --- Check 1: gültige X-Reihe ---
+    if not is_valid_row_x(x):
+        log(f"[PAUSE] invalid x={x:.3f}")
+        try:
+            m.echo("[HyFarmer] Error unpausing: Invalid X coordinate")
+        except Exception:
+            pass
+        return
+
+    # --- Check 2: richtige Orientierung ---
+    if abs(yaw + 90.0) > 0.5 or abs(pitch + 58.5) > 0.5:
+        log(f"[PAUSE] wrong orientation yaw={yaw:.2f} pitch={pitch:.2f}")
+        try:
+            m.echo("[HyFarmer] Error unpausing: Wrong Orientation")
+        except Exception:
+            pass
+        return
+
+    # ===== ALLES OK -> jetzt wirklich entpausieren =====
+    paused = False
+    log("[PAUSE] RESUME")
+    try:
+        m.echo("[HyFarmer] Resumed")
+    except Exception:
+        pass
 
 def do_warp():
     log("[WARP] /warp garden")
