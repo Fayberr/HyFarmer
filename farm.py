@@ -16,7 +16,7 @@ PUSH_MIN = 0.25
 PUSH_MAX = 2.5
 
 # ================= STATE =================
-paused = True                 # startet bewusst pausiert
+paused = True
 running = True
 _last_key_seen = None
 
@@ -81,12 +81,11 @@ def get_direction(x: float):
 def is_valid_row_x(x: float) -> bool:
     row_index = round((x + 88.3) / 3)
     snapped_x = -88.3 + row_index * 3
-    return abs(x - snapped_x) < 0.05   # 5 cm Toleranz gegen Float-Noise
+    return abs(x - snapped_x) < 0.05
 
 def toggle_pause():
     global paused
 
-    # FALL 1: wir WOLLEN pausieren
     if not paused:
         paused = True
         stop_inputs()
@@ -97,8 +96,6 @@ def toggle_pause():
             pass
         return
 
-    # ===== FALL 2: wir WOLLEN entpausieren -> erst CHECKS =====
-
     try:
         x, y, z = m.player_position()
         yaw, pitch = m.player_orientation()
@@ -106,7 +103,6 @@ def toggle_pause():
         log(f"[PAUSE] ERROR reading state: {e}")
         return
 
-    # --- Check 1: gültige X-Reihe ---
     if not is_valid_row_x(x):
         log(f"[PAUSE] invalid x={x:.3f}")
         try:
@@ -115,7 +111,6 @@ def toggle_pause():
             pass
         return
 
-    # --- Check 2: richtige Orientierung ---
     if abs(yaw + 90.0) > 0.5 or abs(pitch + 58.5) > 0.5:
         log(f"[PAUSE] wrong orientation yaw={yaw:.2f} pitch={pitch:.2f}")
         try:
@@ -124,7 +119,6 @@ def toggle_pause():
             pass
         return
 
-    # ===== ALLES OK -> jetzt wirklich entpausieren =====
     paused = False
     log("[PAUSE] RESUME")
     try:
@@ -135,7 +129,7 @@ def toggle_pause():
 def do_warp():
     log("[WARP] /warp garden")
     try:
-        m.echo("[HyFarmer] Warpe zu garden...")
+        m.echo("[HyFarmer] Warping to garden...")
     except Exception:
         pass
     m.execute("/warp garden")
@@ -145,7 +139,7 @@ def set_orientation():
     TARGET_PITCH = -58.5
     log(f"[ORI] setting to fixed target ({TARGET_YAW}, {TARGET_PITCH})")
     try:
-        m.echo("[HyFarmer] Orientierung auf Farm-Blick gesetzt")
+        m.echo("[HyFarmer] Orientation set to farm view")
     except Exception:
         pass
     m.player_set_orientation(TARGET_YAW, TARGET_PITCH)
@@ -153,7 +147,7 @@ def set_orientation():
 def kill_all_jobs():
     log("=== KILL_ALL START ===")
     try:
-        m.echo("[HyFarmer] Beende alle Jobs...")
+        m.echo("[HyFarmer] Stopping all jobs...")
     except Exception:
         pass
 
@@ -200,13 +194,12 @@ def on_key(event):
 m._register_key_listener(on_key)
 
 log("SCRIPT START")
-m.echo("[HyFarmer] Script gestartet im PAUSE-Modus. Drücke Numpad0 zum Starten.")
+m.echo("[HyFarmer] Script started in PAUSE mode. Press Numpad0 to start.")
 log_state("START")
 
 # ================= MAIN LOOP =================
 while running:
     try:
-        # ---------- 1) KEY HANDLING ----------
         if _last_key_seen is not None:
             k = _last_key_seen
             _last_key_seen = None
@@ -227,17 +220,14 @@ while running:
                 kill_all_jobs()
                 os._exit(0)
 
-        # ---------- 2) PAUSE ----------
         if paused:
             time.sleep(0.05)
             continue
 
-        # ---------- 3) FARM LOGIC ----------
         now = time.time()
         x, y, z = m.player_position()
         direction, snapped_x = get_direction(x)
 
-        # initialisiere Reihe beim ersten Tick
         if start_row_x is None:
             start_row_x = snapped_x
 
@@ -263,7 +253,7 @@ while running:
                 row_push_until = now + random.uniform(PUSH_MIN, PUSH_MAX)
                 log(f"[ROW-PUSH] start until {row_push_until:.3f}")
                 try:
-                    m.echo(f"[HyFarmer] Extra Push to the {direction}")
+                    m.echo(f"[HyFarmer] Extra push to the {direction}")
                 except Exception:
                     pass
 
@@ -280,7 +270,7 @@ while running:
                 row_push_until = 0.0
                 STATE = "MOVE_FORWARD"
                 try:
-                    m.echo("[HyFarmer] Moving to next Row")
+                    m.echo("[HyFarmer] Moving to next row")
                 except Exception:
                     pass
                 continue
@@ -297,7 +287,7 @@ while running:
                 log("[EDGE] no push -> MOVE_FORWARD")
                 STATE = "MOVE_FORWARD"
                 try:
-                    m.echo("[HyFarmer] Moving to next Row")
+                    m.echo("[HyFarmer] Moving to next row")
                 except Exception:
                     pass
                 continue
@@ -316,8 +306,6 @@ while running:
                 set_move(attack=True, forward=True, left=True)
             else:
                 set_move(attack=True, forward=True, right=True)
-
-            cur_dir, cur_snap = get_direction(x)
 
             if abs(x - target_snap) < 0.05:
                 log(f"[MOVE-FWD] reached next row {x:.3f}")
