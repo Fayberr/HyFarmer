@@ -20,11 +20,16 @@ END_ROW_Z = 238.68
 END_TOL = 0.1
 WARP_WAIT = 1.2
 
+# >>> Warten am Feldende <<<
+END_HARD_WAIT = 5.0
+END_EXTRA_MIN = 1.0
+END_EXTRA_MAX = 15.0
+
 # ================= STATE =================
 paused = True
 running = True
 _last_key_seen = None
-attack_held = False   # merkt sich, ob wir dauerhaft minen
+attack_held = False
 
 STATE = "FARM_ROW"
 row_push_until = 0.0
@@ -67,8 +72,6 @@ def stop_inputs():
             log(f"stop_inputs error: {e}")
     attack_held = False
 
-# set_move bewegt NUR die Beine, NICHT mehr den Angriff
-
 def set_move(forward=False, left=False, right=False):
     m.player_press_forward(forward)
     m.player_press_left(left)
@@ -96,7 +99,6 @@ def is_valid_row_x(x: float) -> bool:
     return abs(x - snapped_x) < 0.05
 
 def ensure_attack():
-    """Stellt sicher, dass Linksklick dauerhaft gehalten wird."""
     global attack_held
     if not attack_held:
         m.player_press_attack(True)
@@ -189,7 +191,7 @@ def kill_all_jobs():
 
         for j in others:
             log(f"kill job {j.job_id}")
-            m.execute(fr"\\killjob {j.job_id}")
+            m.execute(fr"\killjob {j.job_id}")
         time.sleep(0.08)
 
     try:
@@ -200,7 +202,7 @@ def kill_all_jobs():
         )
         if me:
             log(f"self-kill {me.job_id}")
-            m.execute(fr"\\killjob {me.job_id}")
+            m.execute(fr"\killjob {me.job_id}")
     except Exception as e:
         log(f"kill_all_jobs error: {e}")
 
@@ -248,7 +250,6 @@ while running:
             time.sleep(0.05)
             continue
 
-        # >>> WICHTIGER FIX: nach jedem Warp wieder Linksklick halten <<<
         ensure_attack()
 
         now = time.time()
@@ -275,10 +276,11 @@ while running:
             )
 
             if at_wall and row_push_until == 0.0:
-                row_push_until = now + random.uniform(PUSH_MIN, PUSH_MAX)
+                push_time = random.uniform(PUSH_MIN, PUSH_MAX)
+                row_push_until = now + push_time
                 log(f"[ROW-PUSH] start until {row_push_until:.3f}")
                 try:
-                    m.echo(f"[HyFarmer] Extra push to the {direction}")
+                    m.echo(f"[HyFarmer] Extra push to the {direction} ({push_time:.1f}s)")
                 except Exception:
                     pass
 
@@ -322,18 +324,28 @@ while running:
             target_row_x = start_row_x + 3
 
             if at_field_end(x, z):
-                log("[END] reached final row -> warping")
+                log("[END] reached final row -> waiting before warp")
                 stop_inputs()
 
+                wait_extra = random.uniform(END_EXTRA_MIN, END_EXTRA_MAX)
+                total_wait = END_HARD_WAIT + wait_extra
+                log(f"[END] waiting {total_wait:.2f}s before warp")
+
                 try:
-                    m.echo("[HyFarmer] End of field reached, warping...")
+                    m.echo(f"[HyFarmer] Waiting at end ({total_wait:.1f}s)")
+                except Exception:
+                    pass
+
+                time.sleep(total_wait)
+
+                try:
+                    m.echo("[HyFarmer] Warping now...")
                 except Exception:
                     pass
 
                 m.execute("/warp garden")
                 time.sleep(WARP_WAIT)
 
-                # >>> NACH WARP SOFORT WIEDER MINING AN <<<
                 ensure_attack()
 
                 x, y, z = m.player_position()
