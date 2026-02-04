@@ -17,13 +17,14 @@ PUSH_MAX = 2.5
 
 END_ROW_X = -55.3
 END_ROW_Z = 238.68
-END_TOL = 0.1        # Toleranz, weil Koordinaten nie perfekt sind
+END_TOL = 0.1
 WARP_WAIT = 1.2
 
 # ================= STATE =================
 paused = True
 running = True
 _last_key_seen = None
+attack_held = False
 
 STATE = "FARM_ROW"
 row_push_until = 0.0
@@ -45,13 +46,14 @@ def log_state(tag: str):
             f"[STATE {tag}] "
             f"pos=({x:.3f},{y:.3f},{z:.3f}) "
             f"ori=({yaw:.3f},{pitch:.3f}) "
-            f"state={STATE} paused={paused}"
+            f"state={STATE} paused={paused} attack_held={attack_held}"
         )
     except Exception as e:
         log(f"STATE ERROR: {e}")
 
 # ================= INPUT =================
 def stop_inputs():
+    global attack_held
     for fn in (
         m.player_press_attack,
         m.player_press_forward,
@@ -63,9 +65,11 @@ def stop_inputs():
             fn(False)
         except Exception as e:
             log(f"stop_inputs error: {e}")
+    attack_held = False
 
-def set_move(attack=False, forward=False, left=False, right=False):
-    m.player_press_attack(attack)
+# set_move bewegt NUR die Beine, NICHT mehr den Angriff
+
+def set_move(forward=False, left=False, right=False):
     m.player_press_forward(forward)
     m.player_press_left(left)
     m.player_press_right(right)
@@ -92,7 +96,7 @@ def is_valid_row_x(x: float) -> bool:
     return abs(x - snapped_x) < 0.05
 
 def toggle_pause():
-    global paused
+    global paused, attack_held
 
     if not paused:
         paused = True
@@ -128,7 +132,9 @@ def toggle_pause():
         return
 
     paused = False
-    log("[PAUSE] RESUME")
+    attack_held = True
+    m.player_press_attack(True)   # EINMAL drücken und dann halten
+    log("[PAUSE] RESUME (attack locked)")
     try:
         m.echo("[HyFarmer] Resumed")
     except Exception:
@@ -140,6 +146,7 @@ def do_warp():
         m.echo("[HyFarmer] Warping to garden...")
     except Exception:
         pass
+    stop_inputs()
     m.execute("/warp garden")
 
 def set_orientation():
@@ -250,8 +257,6 @@ while running:
                 except Exception:
                     pass
 
-            m.player_press_attack(True)
-
             at_wall = (
                 (direction == "left" and z <= ROW_MIN) or
                 (direction == "right" and z >= ROW_MAX)
@@ -268,9 +273,9 @@ while running:
             if row_push_until != 0.0 and now < row_push_until:
                 log(f"[ROW-PUSH] pushing {direction} z={z:.3f}")
                 if direction == "left":
-                    set_move(attack=True, left=True)
+                    set_move(left=True)
                 else:
-                    set_move(attack=True, right=True)
+                    set_move(right=True)
                 continue
 
             if row_push_until != 0.0 and now >= row_push_until:
@@ -285,11 +290,11 @@ while running:
 
             if direction == "left" and z > ROW_MIN:
                 log(f"[MOVE] row left z={z:.3f}")
-                set_move(attack=True, left=True)
+                set_move(left=True)
 
             elif direction == "right" and z < ROW_MAX:
                 log(f"[MOVE] row right z={z:.3f}")
-                set_move(attack=True, right=True)
+                set_move(right=True)
 
             else:
                 log("[EDGE] no push -> MOVE_FORWARD")
@@ -304,7 +309,6 @@ while running:
 
             target_row_x = start_row_x + 3
 
-            # ===== FELD-ENDE HANDLER =====
             if at_field_end(x, z):
                 log("[END] reached final row -> warping")
                 stop_inputs()
@@ -317,7 +321,6 @@ while running:
                 m.execute("/warp garden")
                 time.sleep(WARP_WAIT)
 
-                # nach Warp neu orientieren und neu evaluieren
                 x, y, z = m.player_position()
                 direction, snapped_x = get_direction(x)
 
@@ -340,9 +343,9 @@ while running:
             )
 
             if next_direction == "left":
-                set_move(attack=True, forward=True, left=True)
+                set_move(forward=True, left=True)
             else:
-                set_move(attack=True, forward=True, right=True)
+                set_move(forward=True, right=True)
 
             if abs(x - target_snap) < 0.05:
                 log(f"[MOVE-FWD] reached next row {x:.3f}")
