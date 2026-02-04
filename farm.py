@@ -20,10 +20,12 @@ END_ROW_Z = 238.68
 END_TOL = 0.1
 WARP_WAIT = 1.2
 
-# >>> Warten am Feldende <<<
-END_HARD_WAIT = 5.0
+END_HARD_WAIT = 4.0
 END_EXTRA_MIN = 1.0
-END_EXTRA_MAX = 15.0
+END_EXTRA_MAX = 10.0
+
+POST_WARP_MIN = 0.5
+POST_WARP_MAX = 2.0
 
 # ================= STATE =================
 paused = True
@@ -191,7 +193,7 @@ def kill_all_jobs():
 
         for j in others:
             log(f"kill job {j.job_id}")
-            m.execute(fr"\killjob {j.job_id}")
+            m.execute(fr"\\killjob {j.job_id}")
         time.sleep(0.08)
 
     try:
@@ -202,7 +204,7 @@ def kill_all_jobs():
         )
         if me:
             log(f"self-kill {me.job_id}")
-            m.execute(fr"\killjob {me.job_id}")
+            m.execute(fr"\\killjob {me.job_id}")
     except Exception as e:
         log(f"kill_all_jobs error: {e}")
 
@@ -345,6 +347,14 @@ while running:
 
                 m.execute("/warp garden")
                 time.sleep(WARP_WAIT)
+
+                post_wait = random.uniform(POST_WARP_MIN, POST_WARP_MAX)
+                log(f"[WARP] post-wait {post_wait:.2f}s")
+                try:
+                    m.echo(f"[HyFarmer] Waiting after warp ({post_wait:.1f}s)")
+                except Exception:
+                    pass
+                time.sleep(post_wait)
 
                 ensure_attack()
 
