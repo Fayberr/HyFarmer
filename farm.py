@@ -24,7 +24,7 @@ WARP_WAIT = 1.2
 paused = True
 running = True
 _last_key_seen = None
-attack_held = False
+attack_held = False   # merkt sich, ob wir dauerhaft minen
 
 STATE = "FARM_ROW"
 row_push_until = 0.0
@@ -95,6 +95,14 @@ def is_valid_row_x(x: float) -> bool:
     snapped_x = -88.3 + row_index * 3
     return abs(x - snapped_x) < 0.05
 
+def ensure_attack():
+    """Stellt sicher, dass Linksklick dauerhaft gehalten wird."""
+    global attack_held
+    if not attack_held:
+        m.player_press_attack(True)
+        attack_held = True
+        log("[ATTACK] locked ON")
+
 def toggle_pause():
     global paused, attack_held
 
@@ -132,8 +140,7 @@ def toggle_pause():
         return
 
     paused = False
-    attack_held = True
-    m.player_press_attack(True)   # EINMAL drücken und dann halten
+    ensure_attack()
     log("[PAUSE] RESUME (attack locked)")
     try:
         m.echo("[HyFarmer] Resumed")
@@ -149,6 +156,7 @@ def do_warp():
     stop_inputs()
     m.execute("/warp garden")
 
+# ================= ORIENTATION =================
 def set_orientation():
     TARGET_YAW = -90.0
     TARGET_PITCH = -58.5
@@ -159,6 +167,7 @@ def set_orientation():
         pass
     m.player_set_orientation(TARGET_YAW, TARGET_PITCH)
 
+# ================= JOB CONTROL =================
 def kill_all_jobs():
     log("=== KILL_ALL START ===")
     try:
@@ -180,7 +189,7 @@ def kill_all_jobs():
 
         for j in others:
             log(f"kill job {j.job_id}")
-            m.execute(fr"\killjob {j.job_id}")
+            m.execute(fr"\\killjob {j.job_id}")
         time.sleep(0.08)
 
     try:
@@ -191,7 +200,7 @@ def kill_all_jobs():
         )
         if me:
             log(f"self-kill {me.job_id}")
-            m.execute(fr"\killjob {me.job_id}")
+            m.execute(fr"\\killjob {me.job_id}")
     except Exception as e:
         log(f"kill_all_jobs error: {e}")
 
@@ -238,6 +247,9 @@ while running:
         if paused:
             time.sleep(0.05)
             continue
+
+        # >>> WICHTIGER FIX: nach jedem Warp wieder Linksklick halten <<<
+        ensure_attack()
 
         now = time.time()
         x, y, z = m.player_position()
@@ -320,6 +332,9 @@ while running:
 
                 m.execute("/warp garden")
                 time.sleep(WARP_WAIT)
+
+                # >>> NACH WARP SOFORT WIEDER MINING AN <<<
+                ensure_attack()
 
                 x, y, z = m.player_position()
                 direction, snapped_x = get_direction(x)
