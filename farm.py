@@ -193,7 +193,7 @@ def kill_all_jobs():
 
         for j in others:
             log(f"kill job {j.job_id}")
-            m.execute(fr"\\killjob {j.job_id}")
+            m.execute(fr"\killjob {j.job_id}")
         time.sleep(0.08)
 
     try:
@@ -204,7 +204,7 @@ def kill_all_jobs():
         )
         if me:
             log(f"self-kill {me.job_id}")
-            m.execute(fr"\\killjob {me.job_id}")
+            m.execute(fr"\killjob {me.job_id}")
     except Exception as e:
         log(f"kill_all_jobs error: {e}")
 
@@ -348,6 +348,7 @@ while running:
                 m.execute("/warp garden")
                 time.sleep(WARP_WAIT)
 
+                # >>> NEU: extra Wartezeit NACH dem Warp <<<
                 post_wait = random.uniform(POST_WARP_MIN, POST_WARP_MAX)
                 log(f"[WARP] post-wait {post_wait:.2f}s")
                 try:
