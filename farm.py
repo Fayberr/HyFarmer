@@ -1,5 +1,7 @@
 import minescript as m
-import time, os, traceback, random
+
+import time, os, traceback, random, winsound
+
 
 # ================= CONFIG =================
 BASE_DIR = os.path.dirname(__file__)
@@ -26,6 +28,10 @@ END_EXTRA_MAX = 2.0
 
 POST_WARP_MIN = 0.75
 POST_WARP_MAX = 1.0
+
+LAST_POS = 0
+
+WARN_SOUND_PATH = r"C:\Users\derfa\AppData\Roaming\ModrinthApp\profiles\Skyblock 1.21.10 1.0.0\minescript\AnvilLand.wav"
 
 # ================= STATE =================
 paused = True
@@ -57,6 +63,26 @@ def log_state(tag: str):
         )
     except Exception as e:
         log(f"STATE ERROR: {e}")
+# ================= Helper =================
+
+def alert(alert_msg, play_sound):
+
+    log(f"[ALERT] {alert_msg}")
+
+    m.echo(f"[ALERT] §c{alert_msg}")
+
+    if play_sound:
+        play_sound(WARN_SOUND_PATH)
+
+def play_sound(sound_path):
+    try:
+        winsound.PlaySound(
+            fr"{sound_path}",
+            winsound.SND_FILENAME | winsound.SND_ASYNC
+        )
+    except Exception as e:
+        m.echo(f"§c[ERROR] {e}§r")
+
 
 # ================= INPUT =================
 def stop_inputs():
@@ -262,6 +288,22 @@ while running:
             start_row_x = snapped_x
 
         if STATE == "FARM_ROW":
+
+            at_wall = (
+                    (direction == "left" and z <= ROW_MIN) or
+                    (direction == "right" and z >= ROW_MAX)
+            )
+
+            if LAST_POS != 0:
+
+                if (LAST_POS == m.player_position()) and not at_wall:
+                    alert("NO MOVEMENT DETECTED !!!!!!!!!!!!!!!!!!!!!!!!!")
+                else:
+                    #m.echo(f"Last POS: {LAST_POS} Cur Pos: {m.player_position()}")
+                    LAST_POS = m.player_position()
+
+            else:
+                LAST_POS = m.player_position()
 
             if start_row_x != snapped_x:
                 start_row_x = snapped_x
