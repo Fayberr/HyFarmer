@@ -4,7 +4,7 @@ import time, os, traceback, random, winsound
 
 # ================= CONFIG =================
 BASE_DIR = os.path.dirname(__file__)
-LOG_PATH = os.path.join(BASE_DIR, "Farm_BASE_log.txt")
+LOG_PATH = os.path.join(BASE_DIR, "FarmLog.txt")
 
 PAUSE_KEY = 320
 WARP_KEY = 330
@@ -32,7 +32,7 @@ LAST_POS = 0
 
 FARM_ITEM = "diamond_axe"
 
-WARN_SOUND_PATH = r"C:\Users\derfa\AppData\Roaming\ModrinthApp\profiles\Skyblock 1.21.10 1.0.0\minescript\AnvilLand.wav"
+WARN_SOUND_PATH = r"C:\Users\derfa\AppData\Roaming\ModrinthApp\profiles\Skyblock 1.21.10 1.0.0\minescript\assets\AnvilLand.wav"
 
 # ================= STATE =================
 paused = True
