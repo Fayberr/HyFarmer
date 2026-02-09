@@ -1,7 +1,6 @@
-import minescript as m
+import system.lib.minescript as m
 
 import time, os, traceback, random, winsound
-
 
 # ================= CONFIG =================
 BASE_DIR = os.path.dirname(__file__)
@@ -19,17 +18,19 @@ PUSH_MAX = 1.5
 
 END_ROW_X = -55.3
 END_ROW_Z = 238.68
-END_TOL = 0.1
-WARP_WAIT = 1.2
+END_TOL = 0 # Usually 0.1
 
 END_HARD_WAIT = 2.0
 END_EXTRA_MIN = 1.0
 END_EXTRA_MAX = 2.0
 
+WARP_WAIT = 1.2
 POST_WARP_MIN = 0.75
 POST_WARP_MAX = 1.0
 
 LAST_POS = 0
+
+FARM_ITEM = "diamond_axe"
 
 WARN_SOUND_PATH = r"C:\Users\derfa\AppData\Roaming\ModrinthApp\profiles\Skyblock 1.21.10 1.0.0\minescript\AnvilLand.wav"
 
@@ -38,10 +39,12 @@ paused = True
 running = True
 _last_key_seen = None
 attack_held = False
+pause_script = False
 
 STATE = "FARM_ROW"
 row_push_until = 0.0
 start_row_x = None
+
 
 # ================= LOGGING =================
 with open(LOG_PATH, "w", encoding="utf-8") as f:
@@ -65,14 +68,24 @@ def log_state(tag: str):
         log(f"STATE ERROR: {e}")
 # ================= Helper =================
 
-def alert(alert_msg, play_sound):
+def alert(alert_msg, sound):
 
     log(f"[ALERT] {alert_msg}")
 
     m.echo(f"[ALERT] §c{alert_msg}")
 
-    if play_sound:
+    if sound == "default":
         play_sound(WARN_SOUND_PATH)
+
+    elif sound == "beep":
+        beep()
+
+    elif sound == "None":
+        pass
+
+    else:
+        log(f"[ERROR] Alert tried to play an invalid sound ({str(sound)})")
+
 
 def play_sound(sound_path):
     try:
@@ -83,6 +96,40 @@ def play_sound(sound_path):
     except Exception as e:
         m.echo(f"§c[ERROR] {e}§r")
 
+def beep():
+    winsound.Beep(1000, 300)
+
+def player_items():
+    items = m.player_hand_items()
+
+    mainhand_item = items.main_hand
+    offhand_item = items.off_hand
+
+    return mainhand_item, offhand_item
+
+def failsafe():
+    ori = m.player_orientation()
+
+    x, y, z = m.player_position()
+
+    if not player_items()[0]['item'].split(":")[1] == FARM_ITEM:
+        log("[FAILSAFE] Detected not holding Farming Item")
+        return True, "Item not Farm Item", "default"
+
+    if abs(ori[0] + 90.0) > 0.1 or abs(ori[1] + 58.5) > 0.1:
+        log("[FAILSAFE] Detected wrong Orientation")
+        return True, "Orientation not correct", "beep"
+
+    if not (-90 <= x < -55) or not (66 <= y < 69) or not (-240 <= z < 240):
+        log("[FAILSAFE] Detected wrong Coordinates (OUT OF FARM)")
+        return True, "Coordinates outside of Farm", "default"
+
+    if not is_valid_row_x(x) and (ROW_MIN + 1 < z < ROW_MAX - 1):
+        log("[FAILSAFE] Detected invalid X ")
+        return True, "Invalid X Coordinate", "beep"
+
+
+    return False, "None", "None"
 
 # ================= INPUT =================
 def stop_inputs():
@@ -153,21 +200,39 @@ def toggle_pause():
         log(f"[PAUSE] ERROR reading state: {e}")
         return
 
+    if not (-90 <= x < -55) or not (66 <= y < 69) or not (-240 <= z < 240):
+        log(f"[PAUSE] Outside Farm")
+        try:
+            m.echo("[HyFarmer] §eError unpausing: Outside of Farm")
+        except Exception:
+            pass
+        return
+
     if not is_valid_row_x(x):
         log(f"[PAUSE] invalid x={x:.3f}")
         try:
-            m.echo("[HyFarmer] Error unpausing: Invalid X coordinate")
+            m.echo("[HyFarmer] §eError unpausing: Invalid X coordinate")
         except Exception:
             pass
         return
 
     if abs(yaw + 90.0) > 0.5 or abs(pitch + 58.5) > 0.5:
-        log(f"[PAUSE] wrong orientation yaw={yaw:.2f} pitch={pitch:.2f}")
+        log(f"[PAUSE] Wrong orientation yaw={yaw:.2f} pitch={pitch:.2f}")
         try:
-            m.echo("[HyFarmer] Error unpausing: Wrong Orientation")
+            m.echo("[HyFarmer] §eError unpausing: Wrong Orientation")
         except Exception:
             pass
         return
+
+    if player_items()[0]['item'].split(":")[1] != FARM_ITEM:
+        log(f"[PAUSE] Not holding Farm Item")
+        try:
+            m.echo("[HyFarmer] §eError unpausing: Not holding Farm Item")
+        except Exception:
+            pass
+        return
+
+
 
     paused = False
     ensure_attack()
@@ -236,7 +301,7 @@ def kill_all_jobs():
 
     log("=== KILL_ALL DONE ===")
 
-# ================= KEY LISTENER =================
+# ================= LISTENER =================
 def on_key(event):
     global _last_key_seen
     if event["action"] != 1:
@@ -245,6 +310,27 @@ def on_key(event):
     log(f"[KEY] {k}")
     _last_key_seen = k
 
+def on_chat(event):
+    global pause_script
+    log(f"[Key] {event}")
+
+    msg = event['message']
+
+    if "evacuating" in msg:
+        log("[FAILSAFE] §eEvacuation detected, pausing...")
+        m.echo("[HyFarmer] §eEvacuation detected, pausing...")
+        pause_script = True
+        return
+
+    if "limbo" in msg:
+        log("[FAILSAFE] §eLimbo detected, pausing...")
+        m.echo("[HyFarmer] §eLimbo detected, pausing...")
+        pause_script = True
+        return
+
+
+
+m._register_chat_message_listener(on_chat)
 m._register_key_listener(on_key)
 
 log("SCRIPT START")
@@ -287,6 +373,18 @@ while running:
         if start_row_x is None:
             start_row_x = snapped_x
 
+        if pause_script:
+            toggle_pause()
+            pause_script = False
+            continue
+
+        failsafe_result = failsafe()
+
+
+        if failsafe_result[0]:
+            #m.echo(failsafe_result)
+            alert(failsafe_result[1], failsafe_result[2])
+
         if STATE == "FARM_ROW":
 
             at_wall = (
@@ -297,7 +395,7 @@ while running:
             if LAST_POS != 0:
 
                 if (LAST_POS == m.player_position()) and not at_wall:
-                    alert("NO MOVEMENT DETECTED !!!!!!!!!!!!!!!!!!!!!!!!!")
+                    alert("NO MOVEMENT DETECTED !!!!!!!!!!!!!!!!!!!!!!!!!", "default")
                 else:
                     #m.echo(f"Last POS: {LAST_POS} Cur Pos: {m.player_position()}")
                     LAST_POS = m.player_position()
