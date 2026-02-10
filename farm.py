@@ -18,7 +18,7 @@ PUSH_MAX = 1.5
 
 END_ROW_X = -55.3
 END_ROW_Z = 238.68
-END_TOL = 0 # Usually 0.1
+END_TOL = 0.1 # Usually 0.1
 
 END_HARD_WAIT = 2.0
 END_EXTRA_MIN = 1.0
