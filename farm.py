@@ -316,7 +316,7 @@ def on_chat(event):
 
     msg = event['message']
 
-    if "evacuating" in msg:
+    if "Evacuating" in msg:
         log("[FAILSAFE] §eEvacuation detected, pausing...")
         m.echo("[HyFarmer] §eEvacuation detected, pausing...")
         pause_script = True
