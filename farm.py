@@ -375,7 +375,7 @@ if not webhook_is_valid():
     m.echo("[HyFarmer] §eThe configured Discord webhook is Invalid (See Reason in Log). Disabling...")
     discord_webhook_url = None
 else:
-    m.echo("[HyFarmer] Verified Discord webhook")
+    m.echo("[HyFarmer] §aVerified Discord webhook")
 
 log_state("START")
 
