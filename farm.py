@@ -4,6 +4,8 @@ import system.lib.minescript as m
 
 import time, os, traceback, random, winsound
 
+from config import discord_webhook_url
+
 # ================= CONFIG =================
 BASE_DIR = os.path.dirname(__file__)
 LOG_PATH = os.path.join(BASE_DIR, "FarmLog.txt")
@@ -33,8 +35,6 @@ POST_WARP_MAX = 1.0
 LAST_POS = 0
 
 FARM_ITEM = "diamond_axe"
-
-discord_webhook_url = ""
 
 webhook_alert = True
 
