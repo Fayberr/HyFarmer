@@ -445,8 +445,8 @@ while running:
         if STATE == "FARM_ROW":
 
             at_wall = (
-                    (direction == "left" and z <= ROW_MIN_Z) or
-                    (direction == "right" and z >= ROW_MAX_Z)
+                    (direction == "left" and z - ROW_MIN_Z < END_TOL) or
+                    (direction == "right" and z - ROW_MAX_Z < END_TOL)
             )
 
             if LAST_POS != 0:
