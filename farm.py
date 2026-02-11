@@ -52,7 +52,7 @@ row_push_until = 0.0
 start_row_x = None
 
 
-# ================= LOGGING =================
+# ================= LOGGING ================
 with open(LOG_PATH, "w", encoding="utf-8") as f:
     f.write("=== FARM BASE LOG START ===\n")
 
