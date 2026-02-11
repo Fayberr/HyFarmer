@@ -11,10 +11,10 @@ LOG_PATH = os.path.join(BASE_DIR, "FarmLog.txt") #File Name in which the logs wi
 WARN_SOUND_PATH = os.path.join(BASE_DIR,"assets","AnvilLand.wav") #Set this to your Warn sound file path (Default is a relative folder with the sound in it)
 
 # ========== CONFIG ==========
-PAUSE_KEY = 320
-WARP_KEY = 330
-SET_ORI_KEY = 260
-END_KEY = 269
+PAUSE_KEY = 320 #Numpad0
+WARP_KEY = 330 #NumpadComma
+SET_ORI_KEY = 260 #INSERT Key
+END_KEY = 269 #END Key
 
 FARM_ITEM = "diamond_axe" #The Tool that is used for farming (Minecraft ID, not hypixel name)
 FARM_BLOCK = "melon" #The block/crop that is being farmed
@@ -397,6 +397,9 @@ if not webhook_is_valid():
     discord_webhook_url = None
 else:
     m.echo("[HyFarmer] §aVerified Discord webhook")
+
+if not os.path.exists(WARN_SOUND_PATH):
+    m.echo(f"[HyFarmer] §eWarn Sound File not found at path {WARN_SOUND_PATH}")
 
 
 log_state("START")
