@@ -1,8 +1,6 @@
-import requests
-
 import system.lib.minescript as m
 
-import time, os, traceback, random, winsound
+import time, os, traceback, random, winsound, mss, requests, pygetwindow as gw, tempfile, threading
 
 from config import discord_webhook_url
 
@@ -74,7 +72,7 @@ def log_state(tag: str):
         log(f"STATE ERROR: {e}")
 # ================= Helper =================
 
-def alert(alert_msg, sound):
+def alert(alert_msg, sound, send_screenshot):
 
     log(f"[ALERT] {alert_msg}")
 
@@ -93,7 +91,7 @@ def alert(alert_msg, sound):
         log(f"[ERROR] Alert tried to play an invalid sound ({str(sound)})")
 
     if webhook_alert and discord_webhook_url:
-        webhook(f"[ALERT] {alert_msg}")
+        webhook(f"[ALERT] {alert_msg}", send_screenshot)
 
 
 def play_sound(sound_path):
@@ -140,13 +138,31 @@ def failsafe():
 
     return False, "None", "None"
 
-def webhook(content):
+def webhook(content, send_screenshot=False):
     if not discord_webhook_url:
         return
-    else:
-        log(f"[WEBHOOK] Posting to Discord Webhook: {content}")
-        result = requests.post(discord_webhook_url, json={"content": content})
-        log(f"[WEBHOOK] Webhook Post Result: {result}")
+
+    def worker():
+        files = None
+
+        if send_screenshot:
+            wins = gw.getWindowsWithTitle("Minecraft")
+            if wins:
+                with mss.mss() as sct:
+                    img = sct.grab((wins[0].left, wins[0].top, wins[0].right, wins[0].bottom))
+
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+                    mss.tools.to_png(img.rgb, img.size, output=f.name)
+                    files = {"file": open(f.name, "rb")}
+
+        requests.post(
+            discord_webhook_url,
+            files=files,
+            data={"content": content} if files else None,
+            json=None if files else {"content": content},
+        )
+
+    threading.Thread(target=worker, daemon=True).start()
 
 def webhook_is_valid():
     if not discord_webhook_url:
@@ -425,7 +441,7 @@ while running:
 
         if failsafe_result[0]:
             #m.echo(failsafe_result)
-            alert(failsafe_result[1], failsafe_result[2])
+            alert(failsafe_result[1], failsafe_result[2], True)
 
         if STATE == "FARM_ROW":
 
