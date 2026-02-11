@@ -321,41 +321,9 @@ def set_orientation():
 # ================= JOB CONTROL =================
 def kill_all_jobs():
     log("=== KILL_ALL START ===")
-    try:
-        m.echo("[HyFarmer] Stopping all jobs...")
-    except Exception:
-        pass
-
+    m.echo("[HyFarmer] Stopping all jobs...")
     stop_inputs()
-
-    while True:
-        try:
-            others = [j for j in m.job_info()
-                       if j.status == "RUNNING" and not j.self]
-        except Exception:
-            others = []
-
-        if not others:
-            break
-
-        for j in others:
-            log(f"kill job {j.job_id}")
-            m.execute(fr"\killjob {j.job_id}")
-        time.sleep(0.08)
-
-    try:
-        me = next(
-            (j for j in m.job_info()
-             if j.status == "RUNNING" and j.self),
-            None
-        )
-        if me:
-            log(f"self-kill {me.job_id}")
-            m.execute(fr"\killjob {me.job_id}")
-    except Exception as e:
-        log(f"kill_all_jobs error: {e}")
-
-    log("=== KILL_ALL DONE ===")
+    m.execute(r"\killjob -1")
 
 # ================= LISTENER =================
 def on_key(event):
