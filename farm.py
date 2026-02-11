@@ -1,3 +1,5 @@
+import requests
+
 import system.lib.minescript as m
 
 import time, os, traceback, random, winsound
@@ -31,6 +33,10 @@ POST_WARP_MAX = 1.0
 LAST_POS = 0
 
 FARM_ITEM = "diamond_axe"
+
+discord_webhook_url = ""
+
+webhook_alert = True
 
 WARN_SOUND_PATH = r"C:\Users\derfa\AppData\Roaming\ModrinthApp\profiles\Skyblock 1.21.10 1.0.0\minescript\assets\AnvilLand.wav"
 
@@ -86,6 +92,9 @@ def alert(alert_msg, sound):
     else:
         log(f"[ERROR] Alert tried to play an invalid sound ({str(sound)})")
 
+    if webhook_alert and discord_webhook_url:
+        webhook(f"[ALERT] {alert_msg}")
+
 
 def play_sound(sound_path):
     try:
@@ -130,6 +139,32 @@ def failsafe():
 
 
     return False, "None", "None"
+
+def webhook(content):
+    if not discord_webhook_url:
+        return
+    else:
+        log(f"[WEBHOOK] Posting to Discord Webhook: {content}")
+        result = requests.post(discord_webhook_url, json={"content": content})
+        log(f"[WEBHOOK] Webhook Post Result: {result}")
+
+def webhook_is_valid():
+    if not discord_webhook_url:
+        log("[WEBHOOK] Webhook url is None")
+        return False
+
+    elif discord_webhook_url == "":
+        log('[WEBHOOK] Webhook url is ""')
+        return False
+
+    elif not discord_webhook_url.startswith("https://discordapp.com/api/webhooks/"):
+        log('[WEBHOOK] Webhook url doesnt have the proper Format')
+        return False
+
+    else:
+        log(f'[WEBHOOK] Webhook url is likely Valid: "{discord_webhook_url}"')
+        return True
+
 
 # ================= INPUT =================
 def stop_inputs():
@@ -335,6 +370,13 @@ m._register_key_listener(on_key)
 
 log("SCRIPT START")
 m.echo("[HyFarmer] Script started in PAUSE mode. Press Numpad0 to start.")
+
+if not webhook_is_valid():
+    m.echo("[HyFarmer] §eThe configured Discord webhook is Invalid (See Reason in Log). Disabling...")
+    discord_webhook_url = None
+else:
+    m.echo("[HyFarmer] Verified Discord webhook")
+
 log_state("START")
 
 # ================= MAIN LOOP =================
