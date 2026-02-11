@@ -8,7 +8,7 @@ from config import discord_webhook_url #Needs to be imported from a config.py as
 BASE_DIR = os.path.dirname(__file__)
 LOG_PATH = os.path.join(BASE_DIR, "FarmLog.txt") #File Name in which the logs will be saved
 
-WARN_SOUND_PATH = r"C:\Users\derfa\AppData\Roaming\ModrinthApp\profiles\Skyblock 1.21.10 1.0.0\minescript\assets\AnvilLand.wav" #Absolute Path to your warnign sound (.wav)
+WARN_SOUND_PATH = os.path.join(BASE_DIR,"assets","AnvilLand.wav")
 
 # ========== CONFIG ==========
 PAUSE_KEY = 320
