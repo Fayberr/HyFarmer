@@ -2,7 +2,7 @@ import system.lib.minescript as m
 
 import time, os, traceback, random, winsound, mss, requests, pygetwindow as gw, tempfile, threading
 
-from config import discord_webhook_url
+from config import discord_webhook_url #Needs to be imported from a config.py as a discord_webhook_url variable
 
 # ========== PATHS ==========
 BASE_DIR = os.path.dirname(__file__)
