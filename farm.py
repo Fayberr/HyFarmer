@@ -19,8 +19,8 @@ END_KEY = 269
 FARM_ITEM = "diamond_axe" #The Tool that is used for farming (Minecraft ID, not hypixel name)
 FARM_BLOCK = "melon" #The block/crop that is being farmed
 
-ROW_MIN_Y = -238.68 #Y Coordinate of the Start of a row
-ROW_MAX_Y = 238.68 #Y Coordinate of the Start of a row
+ROW_MIN_Z = -238.68 #Y Coordinate of the Start of a row
+ROW_MAX_Z = 238.68 #Y Coordinate of the Start of a row
 
 ROW_MAX_X = -55.3 #X Coordinate of the last row
 ROW_MIN_X = -88.3 #X Coordinate of the beginning Row
@@ -28,6 +28,8 @@ ROW_MIN_X = -88.3 #X Coordinate of the beginning Row
 PUSH_MIN = 0.10 #Minimum time in seconds the script pushes against a row end to look more human
 PUSH_MAX = 1.5  #Maximum push Time
 
+FARM_HEIGHT_Y = 67.875
+FARM_HEIGHT_TOL = 0.3
 
 END_TOL = 0.1 #Small Tolerance to evade float inconsistencies
 
@@ -131,11 +133,11 @@ def failsafe():
         log("[FAILSAFE] Detected wrong Orientation")
         return True, "Orientation not correct", "beep"
 
-    if not (-90 <= x < -55) or not (66 <= y < 69) or not (-240 <= z < 240):
+    if not (ROW_MIN_X-2 <= x < ROW_MAX_X) or not (FARM_HEIGHT_Y-FARM_HEIGHT_TOL <= y < FARM_HEIGHT_Y+FARM_HEIGHT_TOL) or not (ROW_MIN_Z-2 <= z < ROW_MAX_Z+2):
         log("[FAILSAFE] Detected wrong Coordinates (OUT OF FARM)")
         return True, "Coordinates outside of Farm", "default"
 
-    if not is_valid_row_x(x) and (ROW_MIN_Y + 1 < z < ROW_MAX_Y - 1):
+    if not is_valid_row_x(x) and (ROW_MIN_Z + 1 < z < ROW_MAX_Z - 1):
         log("[FAILSAFE] Detected invalid X ")
         return True, "Invalid X Coordinate", "beep"
 
@@ -208,8 +210,8 @@ def set_move(forward=False, left=False, right=False):
 
 # ================= DIRECTION =================
 def get_direction(x: float):
-    row_index = round((x + 88.3) / 3)
-    snapped_x = -88.3 + row_index * 3
+    row_index = round((x - ROW_MIN_X) / 3)
+    snapped_x = ROW_MIN_X + row_index * 3
     direction = "left" if row_index % 2 == 0 else "right"
     log(
         f"[DIR] x={x:.3f} "
@@ -219,12 +221,12 @@ def get_direction(x: float):
     return direction, snapped_x
 
 def at_field_end(x, z) -> bool:
-    return abs(x - ROW_MAX_X) < END_TOL and abs(z - ROW_MAX_Y) < END_TOL
+    return abs(x - ROW_MAX_X) < END_TOL and abs(z - ROW_MAX_Z) < END_TOL
 
 # ================= ACTIONS =================
 def is_valid_row_x(x: float) -> bool:
-    row_index = round((x + 88.3) / 3)
-    snapped_x = -88.3 + row_index * 3
+    row_index = round((x - ROW_MIN_X) / 3)
+    snapped_x = ROW_MIN_X + row_index * 3
     return abs(x - snapped_x) < 0.05
 
 def ensure_attack():
@@ -254,7 +256,7 @@ def toggle_pause():
         log(f"[PAUSE] ERROR reading state: {e}")
         return
 
-    if not (-90 <= x < -55) or not (66 <= y < 69) or not (-240 <= z < 240):
+    if not (ROW_MIN_X-2 <= x < ROW_MAX_X) or not (FARM_HEIGHT_Y-FARM_HEIGHT_TOL <= y < FARM_HEIGHT_Y+FARM_HEIGHT_TOL) or not (ROW_MIN_Z-2 <= z < ROW_MAX_Z+2):
         log(f"[PAUSE] Outside Farm")
         try:
             m.echo("[HyFarmer] §eError unpausing: Outside of Farm")
@@ -396,6 +398,7 @@ if not webhook_is_valid():
 else:
     m.echo("[HyFarmer] §aVerified Discord webhook")
 
+
 log_state("START")
 
 # ================= MAIN LOOP =================
@@ -449,8 +452,8 @@ while running:
         if STATE == "FARM_ROW":
 
             at_wall = (
-                    (direction == "left" and z <= ROW_MIN_Y) or
-                    (direction == "right" and z >= ROW_MAX_Y)
+                    (direction == "left" and z <= ROW_MIN_Z) or
+                    (direction == "right" and z >= ROW_MAX_Z)
             )
 
             if LAST_POS != 0:
@@ -474,8 +477,8 @@ while running:
                     pass
 
             at_wall = (
-                (direction == "left" and z <= ROW_MIN_Y) or
-                (direction == "right" and z >= ROW_MAX_Y)
+                (direction == "left" and z <= ROW_MIN_Z) or
+                (direction == "right" and z >= ROW_MAX_Z)
             )
 
             if at_wall and row_push_until == 0.0:
@@ -505,11 +508,11 @@ while running:
                     pass
                 continue
 
-            if direction == "left" and z > ROW_MIN_Y:
+            if direction == "left" and z > ROW_MIN_Z:
                 log(f"[MOVE] row left z={z:.3f}")
                 set_move(left=True)
 
-            elif direction == "right" and z < ROW_MAX_Y:
+            elif direction == "right" and z < ROW_MAX_Z:
                 log(f"[MOVE] row right z={z:.3f}")
                 set_move(right=True)
 
