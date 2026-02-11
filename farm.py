@@ -28,8 +28,8 @@ ROW_MIN_X = -88.3 #X Coordinate of the beginning Row
 PUSH_MIN = 0.10 #Minimum time in seconds the script pushes against a row end to look more human
 PUSH_MAX = 1.5  #Maximum push Time
 
-FARM_HEIGHT_Y = 67.875
-FARM_HEIGHT_TOL = 0.3
+FARM_HEIGHT_Y = 67.875 #The height of walking through the rows
+FARM_HEIGHT_TOL = 0.3 #Small tolerance for float inconsistencies
 
 END_TOL = 0.1 #Small Tolerance to evade float inconsistencies
 
