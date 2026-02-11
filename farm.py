@@ -4,41 +4,45 @@ import time, os, traceback, random, winsound, mss, requests, pygetwindow as gw, 
 
 from config import discord_webhook_url
 
-# ================= CONFIG =================
+# ========== PATHS ==========
 BASE_DIR = os.path.dirname(__file__)
-LOG_PATH = os.path.join(BASE_DIR, "FarmLog.txt")
+LOG_PATH = os.path.join(BASE_DIR, "FarmLog.txt") #File Name in which the logs will be saved
 
+WARN_SOUND_PATH = r"C:\Users\derfa\AppData\Roaming\ModrinthApp\profiles\Skyblock 1.21.10 1.0.0\minescript\assets\AnvilLand.wav" #Absolute Path to your warnign sound (.wav)
+
+# ========== CONFIG ==========
 PAUSE_KEY = 320
 WARP_KEY = 330
 SET_ORI_KEY = 260
 END_KEY = 269
 
-ROW_MIN = -238.68
-ROW_MAX =  238.68
-PUSH_MIN = 0.10
-PUSH_MAX = 1.5
+FARM_ITEM = "diamond_axe" #The Tool that is used for farming (Minecraft ID, not hypixel name)
+FARM_BLOCK = "melon" #The block/crop that is being farmed
 
-END_ROW_X = -55.3
-END_ROW_Z = 238.68
-END_TOL = 0.1 # Usually 0.1
+ROW_MIN_Y = -238.68 #Y Coordinate of the Start of a row
+ROW_MAX_Y = 238.68 #Y Coordinate of the Start of a row
 
-END_HARD_WAIT = 2.0
-END_EXTRA_MIN = 1.0
-END_EXTRA_MAX = 2.0
+ROW_MAX_X = -55.3 #X Coordinate of the last row
+ROW_MIN_X = -88.3 #X Coordinate of the beginning Row
 
-WARP_WAIT = 1.2
-POST_WARP_MIN = 0.75
-POST_WARP_MAX = 1.0
+PUSH_MIN = 0.10 #Minimum time in seconds the script pushes against a row end to look more human
+PUSH_MAX = 1.5  #Maximum push Time
+
+
+END_TOL = 0.1 #Small Tolerance to evade float inconsistencies
+
+END_HARD_WAIT = 2.0 #Minimum Wait before warping
+END_EXTRA_MIN = 1.0 #Mininimum Extra Wait before warping
+END_EXTRA_MAX = 2.0 #Maximum Extra Wait before warping
+
+WARP_WAIT = 1.0 #Time to wait for warping to load
+POST_WARP_MIN = 0.75 #Minimum Wait after auto warp
+POST_WARP_MAX = 1.0 #Maximum Wait after auto warp
 
 LAST_POS = 0
-
-FARM_ITEM = "diamond_axe"
-
 webhook_alert = True
 
-WARN_SOUND_PATH = r"C:\Users\derfa\AppData\Roaming\ModrinthApp\profiles\Skyblock 1.21.10 1.0.0\minescript\assets\AnvilLand.wav"
-
-# ================= STATE =================
+# ========== STATE ==========
 paused = True
 running = True
 _last_key_seen = None
@@ -131,10 +135,9 @@ def failsafe():
         log("[FAILSAFE] Detected wrong Coordinates (OUT OF FARM)")
         return True, "Coordinates outside of Farm", "default"
 
-    if not is_valid_row_x(x) and (ROW_MIN + 1 < z < ROW_MAX - 1):
+    if not is_valid_row_x(x) and (ROW_MIN_Y + 1 < z < ROW_MAX_Y - 1):
         log("[FAILSAFE] Detected invalid X ")
         return True, "Invalid X Coordinate", "beep"
-
 
     return False, "None", "None"
 
@@ -216,7 +219,7 @@ def get_direction(x: float):
     return direction, snapped_x
 
 def at_field_end(x, z) -> bool:
-    return abs(x - END_ROW_X) < END_TOL and abs(z - END_ROW_Z) < END_TOL
+    return abs(x - ROW_MAX_X) < END_TOL and abs(z - ROW_MAX_Y) < END_TOL
 
 # ================= ACTIONS =================
 def is_valid_row_x(x: float) -> bool:
@@ -446,8 +449,8 @@ while running:
         if STATE == "FARM_ROW":
 
             at_wall = (
-                    (direction == "left" and z <= ROW_MIN) or
-                    (direction == "right" and z >= ROW_MAX)
+                    (direction == "left" and z <= ROW_MIN_Y) or
+                    (direction == "right" and z >= ROW_MAX_Y)
             )
 
             if LAST_POS != 0:
@@ -471,8 +474,8 @@ while running:
                     pass
 
             at_wall = (
-                (direction == "left" and z <= ROW_MIN) or
-                (direction == "right" and z >= ROW_MAX)
+                (direction == "left" and z <= ROW_MIN_Y) or
+                (direction == "right" and z >= ROW_MAX_Y)
             )
 
             if at_wall and row_push_until == 0.0:
@@ -502,11 +505,11 @@ while running:
                     pass
                 continue
 
-            if direction == "left" and z > ROW_MIN:
+            if direction == "left" and z > ROW_MIN_Y:
                 log(f"[MOVE] row left z={z:.3f}")
                 set_move(left=True)
 
-            elif direction == "right" and z < ROW_MAX:
+            elif direction == "right" and z < ROW_MAX_Y:
                 log(f"[MOVE] row right z={z:.3f}")
                 set_move(right=True)
 
