@@ -42,7 +42,10 @@ POST_WARP_MIN = 0.75 #Minimum Wait after auto warp
 POST_WARP_MAX = 1.0 #Maximum Wait after auto warp
 
 LAST_POS = 0
-webhook_alert = True
+webhook_alert = True #If Alerts should be sent to Webhook
+
+restart_after_evac = True #If the Script should automatically begin farming again after a Server restart
+warp_and_resume = False
 
 # ========== STATE ==========
 paused = True
@@ -335,7 +338,7 @@ def on_key(event):
     _last_key_seen = k
 
 def on_chat(event):
-    global pause_script
+    global pause_script, warp_and_resume
     log(f"[Key] {event}")
 
     msg = event['message']
@@ -344,6 +347,13 @@ def on_chat(event):
         log("[FAILSAFE] §eEvacuation detected, pausing...")
         m.echo("[HyFarmer] §eEvacuation detected, pausing...")
         pause_script = True
+
+        log("Experimental Auto restart after Evacuation")
+
+        if restart_after_evac:
+            m.echo("[HyFarmer] Warping and restarting after Evacuation")
+            warp_and_resume = True
+
         return
 
     if "limbo" in msg:
@@ -398,6 +408,18 @@ while running:
                 kill_all_jobs()
                 os._exit(0)
 
+        if pause_script:
+            toggle_pause()
+            pause_script = False
+            continue
+
+        if warp_and_resume:
+            time.sleep(6)
+            do_warp()
+            time.sleep(3)
+            pause_script = True
+            warp_and_resume = False
+
         if paused:
             time.sleep(0.05)
             continue
@@ -411,10 +433,7 @@ while running:
         if start_row_x is None:
             start_row_x = snapped_x
 
-        if pause_script:
-            toggle_pause()
-            pause_script = False
-            continue
+
 
         failsafe_result = failsafe()
 
