@@ -399,7 +399,10 @@ else:
     m.echo("[HyFarmer] §aVerified Discord webhook")
 
 if not os.path.exists(WARN_SOUND_PATH):
-    m.echo(f"[HyFarmer] §eWarn Sound File not found at path {WARN_SOUND_PATH}")
+    m.echo(f"[HyFarmer] §eWarning Sound File not found at path {WARN_SOUND_PATH}")
+    WARN_SOUND_PATH = None
+else:
+    m.echo("[HyFarmer] §aVerified Warning sound File")
 
 
 log_state("START")
