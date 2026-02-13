@@ -44,8 +44,7 @@ POST_WARP_MAX = 1.0 #Maximum Wait after auto warp
 LAST_POS = 0
 webhook_alert = True #If Alerts should be sent to Webhook
 
-restart_after_evac = True #If the Script should automatically begin farming again after a Server restart
-warp_and_resume = False
+restart_after_evac = True #If the Script should automatically begin farming again after a Server restart # !! WIP !!
 
 # ========== STATE ==========
 paused = True
@@ -53,6 +52,7 @@ running = True
 _last_key_seen = None
 attack_held = False
 pause_script = False
+warp_and_resume = False
 
 STATE = "FARM_ROW"
 row_push_until = 0.0
@@ -343,7 +343,7 @@ def on_chat(event):
 
     msg = event['message']
 
-    if "Evacuating" in msg:
+    if "evac" in msg:
         log("[FAILSAFE] §eEvacuation detected, pausing...")
         m.echo("[HyFarmer] §eEvacuation detected, pausing...")
         pause_script = True
@@ -414,9 +414,21 @@ while running:
             continue
 
         if warp_and_resume:
+            #following is wip and not fully works
+
+            m.echo("Stopping Inputs")
+            stop_inputs()
+            m.echo("Waiting 1 second")
+            time.sleep(1)
+            m.echo("test hub warp")
+            m.execute("/hub")
+            m.echo("Sleeping 6 seconds")
             time.sleep(6)
+            m.echo("warp to garden")
             do_warp()
+            m.echo("sleeping 3 seconds")
             time.sleep(3)
+
             pause_script = True
             warp_and_resume = False
 
