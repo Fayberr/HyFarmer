@@ -6,7 +6,7 @@ from config import discord_webhook_url #Needs to be imported from a config.py as
 
 # ========== PATHS ==========
 BASE_DIR = os.path.dirname(__file__)
-LOG_PATH = os.path.join(BASE_DIR, "FarmLog.txt") #File Name in which the logs will be saved
+LOG_PATH = os.path.join(BASE_DIR, "FarmLog.log") #File Name in which the logs will be saved
 
 WARN_SOUND_PATH = os.path.join(BASE_DIR,"assets","AnvilLand.wav") #Set this to your Warn sound file path (Default is a relative folder with the sound in it)
 
