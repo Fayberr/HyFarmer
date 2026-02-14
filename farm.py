@@ -2,6 +2,7 @@ import system.lib.minescript as m
 
 import time, os, traceback, random, winsound, mss, requests, pygetwindow as gw, tempfile, threading
 
+from components.looker import look
 from config import discord_webhook_url #Needs to be imported from a config.py as a discord_webhook_url variable
 
 # ========== PATHS ==========
@@ -80,6 +81,12 @@ def log_state(tag: str):
     except Exception as e:
         log(f"STATE ERROR: {e}")
 # ================= Helper =================
+def look_async(yaw, pitch, duration=0.4, steps=20):
+    threading.Thread(
+        target=look,
+        args=(yaw, pitch, duration, steps),
+        daemon=True
+    ).start()
 
 def alert(alert_msg, sound, send_screenshot):
 
@@ -343,7 +350,7 @@ def on_chat(event):
 
     msg = event['message']
 
-    if "evac" in msg:
+    if "Evacuating" in msg:
         log("[FAILSAFE] §eEvacuation detected, pausing...")
         m.echo("[HyFarmer] §eEvacuation detected, pausing...")
         pause_script = True
@@ -401,7 +408,7 @@ while running:
                 continue
 
             if k == SET_ORI_KEY:
-                set_orientation()
+                look_async(-90.0, -58.5)
                 continue
 
             if k == END_KEY:
@@ -418,6 +425,7 @@ while running:
 
             m.echo("Stopping Inputs")
             stop_inputs()
+            attack_held = False
             m.echo("Waiting 1 second")
             time.sleep(1)
             m.echo("test hub warp")
